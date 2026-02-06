@@ -1,6 +1,7 @@
 import type { Labels, Response } from "./types.js";
 import { addGhostMember } from "./ghost.js";
 import { addBeehiivMember } from "./beehiiv.js";
+import { isDisposableEmail } from "../utils/disposable-emails.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -25,6 +26,13 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({
       success: false,
       error: "Missing or invalid email or chain in request body",
+    });
+  }
+
+  if (await isDisposableEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      error: "Disposable email addresses are not allowed",
     });
   }
 
