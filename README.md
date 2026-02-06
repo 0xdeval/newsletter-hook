@@ -1,11 +1,27 @@
-# Ghost WebHook
+# Newsletter Webhook (Ghost & Beehiiv)
 
-Webhook to save users in Ghost service as a new member. Send a user's email and additional labels for him to store on Ghost.
+Webhook to add users as members in **Ghost** or **Beehiiv**. Send a user's email, name, and optional labels; the endpoint uses the provider set in `PROVIDER` (Ghost or Beehiiv).
 
 ## Requirements
 
 1. Bun 1.2.17+
 2. Vercel 43.3.0+
+
+## Configuration
+
+Set `PROVIDER` to either `ghost` or `beehiiv`, then configure the matching provider.
+
+### Ghost
+
+- `PROVIDER=ghost`
+- `GHOST_ADMIN_API_URL` – Ghost admin API URL (e.g. `https://your-site.ghost.io`)
+- `ADMIN_API_KEY` – Ghost Admin API key in `keyId:secret` format
+
+### Beehiiv
+
+- `PROVIDER=beehiiv`
+- `BEEHIIV_PUB_ID` – Beehiiv publication ID
+- `BEEHIIV_API_KEY` – Beehiiv API key (Bearer token)
 
 ## Run WebHook
 
@@ -15,19 +31,41 @@ Webhook to save users in Ghost service as a new member. Send a user's email and 
 bun install
 ```
 
-2. To run a webhook:
+2. Run the webhook:
 
 ```bash
+# With Vercel (uses vercel.json routes)
 bun run dev
+```
+
+Or run the standalone server (POST on `/`):
+
+```bash
+bun run start
 ```
 
 ## How to use
 
+The same request body works for both Ghost and Beehiiv.
+
+**Ghost:** `email` and `name` create the member; `labels` are Ghost labels (e.g. for segments).
+
+**Beehiiv:** Subscribes the email to your publication; `name` is stored as the `full_name` custom field, and each `labels` entry is added as a custom field (name and value from the label).
+
 Send a request:
 
 ```bash
-# Local development
+# Local development (Vercel dev – path includes /api/webhook)
 curl -X POST http://localhost:3000/api/webhook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "name": "John",
+    "labels": ["newsletter", "premium"]
+  }'
+
+# Local development (standalone server – POST to /)
+curl -X POST http://localhost:3000 \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -45,61 +83,19 @@ curl -X POST https://your-app.vercel.app/api/webhook \
   }'
 ```
 
-Successful response:
+- `email` (required) – Subscriber email.
+- `name` (optional) – Display name; for Beehiiv, used as `full_name` custom field.
+- `labels` (optional) – Array of strings. If omitted, a default label `webhook-auto-import` is used for Ghost; for Beehiiv they are sent as custom fields.
+
+## Response
+
+Successful response (same for both providers):
 
 ```json
 {
   "success": true,
-  "member": {
-    "id": "6880f3016529b0000196d82d",
-    "uuid": "30cf7a11-803f-41c3-8970-c39beca205c3",
-    "email": "greg@default.com",
-    "name": null,
-    "note": null,
-    "geolocation": null,
-    "subscribed": true,
-    "created_at": "2025-05-23T14:34:41.000Z",
-    "updated_at": "2025-05-23T14:34:41.000Z",
-    "labels": [
-      {
-        "id": "6880f1216129b0000196d82e",
-        "name": "webhook-auto-import",
-        "slug": "webhook-auto-import",
-        "created_at": "2025-05-23T14:34:41.000Z",
-        "updated_at": "2025-05-23T14:34:41.000Z"
-      }
-    ],
-    "subscriptions": [],
-    "avatar_image": "https://www.gravatar.com/avatar/28bdcd0bdfedecca73883905b595a67c?s=250&r=g&d=blank",
-    "comped": false,
-    "email_count": 0,
-    "email_opened_count": 0,
-    "email_open_rate": null,
-    "status": "free",
-    "last_seen_at": null,
-    "attribution": {
-      "id": null,
-      "type": null,
-      "url": null,
-      "title": null,
-      "referrer_source": "",
-      "referrer_medium": "",
-      "referrer_url": null
-    },
-    "unsubscribe_url": "https://default.ghost.io/unsubscribe/?uuid=30cf7a5a-113f-41c3-8970-c39beca205c3&key=dbcd1eec86def7ciw820c2e82bfc4303bf2fa6abc07611bdf1605312ebd49b",
-    "tiers": [],
-    "email_suppression": {
-      "suppressed": false,
-      "info": null
-    },
-    "newsletters": [
-      {
-        "id": "68809d11e1cbca00082f3902",
-        "name": "Greg",
-        "description": null,
-        "status": "active"
-      }
-    ]
-  }
+  "message": "Member added successfully"
 }
 ```
+
+On error the endpoint returns an appropriate status code (e.g. 400, 405, 500) and a JSON body with `success: false` and an `error` field.
