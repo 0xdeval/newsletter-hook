@@ -1,13 +1,15 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import type { Labels, Response } from "./types";
+import { PROVIDER } from "./webhook";
 
 dotenv.config();
 
 const GHOST_ADMIN_API_URL = process.env.GHOST_ADMIN_API_URL || "";
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || "";
 
-if (!GHOST_ADMIN_API_URL || !ADMIN_API_KEY) {
+
+if ((!GHOST_ADMIN_API_URL || !ADMIN_API_KEY) && PROVIDER === "ghost") {
   throw new Error("GHOST_ADMIN_API_URL or ADMIN_API_KEY is not set");
 }
 
@@ -17,7 +19,7 @@ if (!keyId || !secret) {
   throw new Error("ADMIN_API_KEY must be in format 'keyId:secret'");
 }
 
-export const addMember = async (
+export const addGhostMember = async (
   email: string,
   name: string,
   labels: Labels[]

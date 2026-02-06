@@ -1,5 +1,15 @@
 import type { Labels, Response } from "./types.js";
-import { addMember } from "./ghost.js";
+import { addGhostMember } from "./ghost.js";
+import { addBeehiivMember } from "./beehiiv.js";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+export const PROVIDER = process.env.PROVIDER
+
+if (!PROVIDER) {
+  throw new Error("PROVIDER is not set");
+}
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
@@ -46,9 +56,15 @@ export default async function handler(req: any, res: any) {
     labels: labelsToAdd,
   });
 
-  const ghostResponse = (await addMember(email, name, labelsToAdd)) as Response;
+  let response
+  if (PROVIDER === 'ghost') {
+    response = (await addGhostMember(email, name, labelsToAdd)) as Response;
+  } else {
+    response = (await addBeehiivMember(email, name, labelsToAdd)) as Response;
+  }
 
-  if (ghostResponse.success) {
+
+  if (response.success) {
     res.status(200).json({
       success: true,
       message: "Member added successfully",
@@ -56,7 +72,7 @@ export default async function handler(req: any, res: any) {
   } else {
     res.status(500).json({
       success: false,
-      error: ghostResponse.data.errors,
+      error: response.data.errors,
     });
   }
 }
