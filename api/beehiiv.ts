@@ -1,6 +1,6 @@
-import type { Labels } from "./types";
+import type { Labels } from "./types.js";
 import dotenv from "dotenv";
-import { PROVIDER } from "./webhook";
+import { PROVIDER } from "./webhook.js";
 
 dotenv.config();
 
