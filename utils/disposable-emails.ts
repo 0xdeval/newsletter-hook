@@ -36,10 +36,15 @@ async function ensureLoaded(): Promise<Set<string>> {
  * @param email - Full email address (e.g. "user@tempmail.com")
  */
 export async function isDisposableEmail(email: string): Promise<boolean> {
-    const at = email.lastIndexOf("@");
-    if (at === -1) return false;
-    const domain = email.slice(at + 1).trim().toLowerCase();
-    if (!domain) return false;
-    const domains = await ensureLoaded();
-    return domains.has(domain);
+    try {
+        const at = email.lastIndexOf("@");
+        if (at === -1) return false;
+        const domain = email.slice(at + 1).trim().toLowerCase();
+        if (!domain) return false;
+        const domains = await ensureLoaded();
+        return domains.has(domain);
+    } catch (error) {
+        console.error("Error checking disposable email:", error);
+        return false;
+    }
 }
