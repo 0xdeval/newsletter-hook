@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import type { Labels, Response } from "./types";
-import { PROVIDER } from "./webhook";
+import type { Labels, Response } from "./types.js";
+import { PROVIDER } from "./webhook.js";
 
 dotenv.config();
 
